@@ -6,7 +6,7 @@ class Global {
         this.loginBar = null
         this.server = ""
         this.devServer = "http://localhost:1323"
-        this.productionServer = ""
+        this.productionServer = "https://gotrade-k224sx4lwq-ew.a.run.app"
 
         this.x()
     }
