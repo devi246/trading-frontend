@@ -52,7 +52,7 @@ class UserX extends React.Component {
 
         const requestOptions = {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json', },
+            headers: { 'Content-Type': 'application/json', 'Authorization': ' Bearer tok'},
             credentials: 'include',
 		};
         fetch("http://localhost:1323/api/users/" + userName, requestOptions)
