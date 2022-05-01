@@ -316,7 +316,8 @@ class ItemControls extends React.Component {
             credentials: 'include',
             body: JSON.stringify(data)
 		};
-		fetch('http://localhost:1323/api/offers/'+offerId+'/alter', requestOptions)
+		fetch(Globe.server+'/api/offers/'+offerId+'/alter', requestOptions)
+        //fetch('http://localhost:1323/api/offers/'+offerId+'/alter', requestOptions)
         .then(response => {
             console.log("SEND ALTER FORM. Response status:", response.status)
             return response.text()

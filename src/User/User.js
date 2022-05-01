@@ -49,13 +49,15 @@ class UserX extends React.Component {
         const userName = this.props.userName
 
         console.log("USER componentDidMount userName:", userName)
+        console.log("GLOBE:",Globe.server)
 
         const requestOptions = {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'Authorization': ' Bearer tok'},
             credentials: 'include',
 		};
-        fetch("http://localhost:1323/api/users/" + userName, requestOptions)
+        fetch(Globe.server+"/api/users/" + userName, requestOptions)
+        //fetch("http://localhost:1323/api/users/" + userName, requestOptions)
         .then(res => {
             if (res.ok) {
                 return res.json()
