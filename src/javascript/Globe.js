@@ -16,7 +16,7 @@ class GlobeClass {
         this.server = ""
         // The backend servers
         this.devServer = "http://localhost:1323"
-        this.productionServer = "https://gotrade-k224sx4lwq-ew.a.run.app"
+        this.productionServer = "https://trade-k224sx4lwq-ew.a.run.app"
 
         this.devMode = false
 
