@@ -1,44 +1,43 @@
-import React, {Component} from 'react';
+import React from 'react'
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
-import Card from 'react-bootstrap/Card'
-import InputGroup from 'react-bootstrap/InputGroup'
-import FormControl from 'react-bootstrap/FormControl'
 import Container from 'react-bootstrap/Container'
-import Globe from '../Global';
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"
+import { MainContext } from './../MainContext.js'
+
+
 
 const Login=(props)=> {
-    // "navigation" stuff to go from one URL to another:
-    const navigate = useNavigate(); // this must be done inside a "function component"
-    let location = useLocation();
-    const goto = () => {
+    const navigate = useNavigate()
+    let location = useLocation()
 
-        if (location.state && location.state != "") {
+    // after login, go to the next page automatically
+    const afterLoginGoto = () => {
+
+        // if location state was set in a previous page, then go there
+        if (location.state && location.state !== "") {
             navigate(location.state, { } )
-        } else {
-            navigate("/", {  });
+        }
+        // otherwise go to frontpage
+        else {
+            navigate("/", {  })
         }
     }
 
-    console.log("this logged:",props.logged)
-    console.log("print:", location.state)
-
-    return ( <LoginX goto={goto} login={props.login} /> )
+    return ( <LoginPage goto={afterLoginGoto} login={props.login} /> )
 }
-export default Login;
+export default Login
 
-class LoginX extends React.Component {
+
+
+class LoginPage extends React.Component {
     constructor(props) {
     	super(props)
 		this.handleChange = this.handleChange.bind(this)
         this.handleSubmit = this.handleSubmit.bind(this)
-        this.state = { email: "testjoe@example.com", password: "pass" }
-
-        
-        //this.props.boss["login"] = this
+        this.state = { email: "joe@example.com", password: "pass", error: null, isLoading: false }
     }
     
 	handleChange(e) {
@@ -46,45 +45,33 @@ class LoginX extends React.Component {
 	}
 
     handleSubmit(e) {
-        e.preventDefault();
-        //console.log("submit form:", this.state)
+        e.preventDefault()
 
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', },
-            credentials: 'include',
-            body: JSON.stringify( this.state )
-		};
-		fetch('http://localhost:1323/login', requestOptions)
-        .then(response => {
-            console.log("LOGIN. response status", response.status)
-            if (response.ok) {
-                return response.json()
+        this.setState( {isLoading: true} )
+
+        this.context.Post("/login")
+        .Body({email: this.state.email, password: this.state.password})
+        .Success((result)=>{
+            this.props.login(result)
+            this.props.goto()
+        })
+        .Fail((status, message)=>{
+            if (status === null) {
+                alert("can not connect to server")
             } else {
-                console.log("LOGIN ERROR")
+                this.setState({error: "not authorized", isLoading: false})
             }
         })
-        .then(data => {
-            //const topnav = localStorage.getItem('topnav');
-            const user = JSON.parse(data)
-            //Globe.getLoginBar().setLoggedIn(user)
-            console.log("LOGIN. got data", data)
+        .Call()
 
-            this.props.login(user.Name)
-
-            this.props.goto()
-            
-        }
-        );
     }
 
-    render() { return (
-  
-        <div>
+    render() {
+        return (
   
         <Container>
 
-        <br></br>
+        <br></br><br></br>
 
         <Row>
         <Col></Col>
@@ -93,7 +80,7 @@ class LoginX extends React.Component {
         <h5 className="card-subtitle mb-2 text-muted text-start">
         LOGIN
         </h5>
-
+        <br></br>
 
         <Form onSubmit={this.handleSubmit}>
 
@@ -107,18 +94,22 @@ class LoginX extends React.Component {
         <Form.Control type="password" placeholder="Password" name="password" onChange={this.handleChange} value={this.state.password}/>
         </Form.Group>
 
-
-        <Button variant="primary" type="submit">
-        Login
+        
+        <Button variant="primary" type="submit" disabled={this.state.isLoading} >
+            {this.state.isLoading? "Loading...": "Login"}
         </Button>
+        
 
         </Form>
+
+        { this.state.error === null ? "" : <><br></br><p style={{color: "red"}}>Login failed - email or password is wrong</p></> }
+        
 
         <br></br><br></br>
         <p>You can login with the following emails:</p>
         <ul>
-            <li>testjoe@example.com</li>
-            <li>testmia@example.com</li>
+            <li>joe@example.com</li>
+            <li>mia@example.com</li>
         </ul>
         <p>Password is "pass"</p>
 
@@ -128,111 +119,10 @@ class LoginX extends React.Component {
         <Col></Col>
         </Row>
 
-
         </Container>
 
-        </div>
-
-    );}
+        )
+    }
   
 }
-//export default Login;
-
-
-
-class LoginTest extends React.Component {
-    constructor(props) {
-    	super(props)
-		this.test_login = this.test_login.bind(this)
-        this.test_logged = this.test_logged.bind(this)
-        this.test_logout = this.test_logout.bind(this)
-    }
-
-    test_login() {
-        console.log("TEST LOGIN")
-
-        const requestOptions = {
-            method: 'GET',
-            headers: {},
-            credentials: 'include'
-		};
-		fetch('http://localhost:1323/test/login', requestOptions)
-			.then(response => {
-				console.log("LOGIN. response status", response.status)
-				return response.text()
-			})
-			.then(data => console.log("LOGIN. got data", data) );
-    }
-
-    test_logged() {
-        console.log("TEST IF LOGGED IN")
-
-        const requestOptions = {
-            method: 'GET',
-            headers: {},
-            credentials: 'include'
-		};
-		fetch('http://localhost:1323/test/logged', requestOptions)
-			.then(response => {
-				console.log("LOGIN. response status", response.status)
-				return response.text()
-			})
-			.then(data => console.log("LOGIN. got data", data) );
-    }
-
-    test_logout() {
-        console.log("TEST LOGOUT")
-
-        const requestOptions = {
-            method: 'GET',
-            headers: {},
-            credentials: 'include'
-		};
-		fetch('http://localhost:1323/test/logout', requestOptions)
-			.then(response => {
-				console.log("LOGIN. response status", response.status)
-				return response.text()
-			})
-			.then(data => console.log("LOGIN. got data", data) );
-    }
-
-    render() { return (
-
-        <div>
-
-        <Row>
-            <Col>
-            
-            </Col>
-            <Col>
-            
-            <Row>
-                <Col>
-                <Button variant="primary" type="submit" onClick={this.test_login}>
-                Login
-                </Button>
-                </Col>
-                <Col>
-                <Button variant="primary" type="submit" onClick={this.test_logged}>
-                Test Login
-                </Button>
-                </Col>
-                <Col>
-                <Button variant="primary" type="submit" onClick={this.test_logout}>
-                Logout
-                </Button>
-                </Col>
-            </Row>
-            
-
-            </Col>
-            <Col>
-            
-            </Col>
-        </Row>
-
-        </div>
-
-    )
-    }
-}
+LoginPage.contextType = MainContext

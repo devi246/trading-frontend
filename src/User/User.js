@@ -1,91 +1,70 @@
-import React, {Component} from 'react';
+import React from 'react'
 import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
-import Card from 'react-bootstrap/Card'
-import Button from 'react-bootstrap/Button'
-import Form from 'react-bootstrap/Form'
-import { useParams } from "react-router-dom";
-import { useState, useEffect } from 'react';
-import Table from 'react-bootstrap/Table';
-import ListGroup from 'react-bootstrap/ListGroup';
-import { Link } from "react-router-dom";
-import Update from './UpdateUser'
-import Globe from '../Global';
-import EditUser from './EditUser'
-import OffersActive from './OffersActive'
+import { useParams, Link } from "react-router-dom"
+import UserEdit from './UserEdit'
+import UserStats from './UserStats'
+import UserInfo from './UserInfo'
+import { MainContext } from '../MainContext.js'
+
+
 
 const User=(props)=> {
-
-    const { userName } = useParams();
-
+    const { username } = useParams()
     return (
-
-        <UserX userName={userName} user={props.user} />
-
+        <UserPage userInURL={username} />
     )
-
 }
-export default User;
+export default User
 
 
-class UserX extends React.Component {
+
+class UserPage extends React.Component {
     constructor(props) {
-        super(props);
-        this.state = { isLoaded: false, offer: null, error: null }
-        this.getUserFromServer = this.getUserFromServer.bind(this)
+        super(props)
+        this.state = { isLoaded: false, offer: null, error: null, user: null }
+        this.getUser = this.getUser.bind(this)
+        this.setUser = this.setUser.bind(this)
         this.init = false
     }
 
     componentDidMount() {
-        if (this.init == false) {
+        if (this.init === false) {
             this.init = true
-            this.getUserFromServer()
+            this.getUser()
         }
     }
 
-    getUserFromServer() {
-
-        const userName = this.props.userName
-
-        console.log("USER componentDidMount userName:", userName)
-        console.log("GLOBE:",Globe.server)
-
-        const requestOptions = {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'Authorization': ' Bearer tok'},
-            credentials: 'include',
-		};
-        fetch(Globe.server+"/api/users/" + userName, requestOptions)
-        //fetch("http://localhost:1323/api/users/" + userName, requestOptions)
-        .then(res => {
-            if (res.ok) {
-                return res.json()
+    componentDidUpdate() {
+        if (this.state.user !== null) {
+            if (this.props.userInURL !== this.state.user.name) {
+                this.getUser()
             }
-            throw new Error('Something went wrong when connecting to server');
+        }
+    }
+
+    setUser(user) {
+        this.setState( {user: user} )
+    }
+
+    getUser() {
+
+        const userInURL = this.props.userInURL
+
+        this.context.Post("/users/" + userInURL)
+        .Success((result)=>{
+            this.setState( { user: result, isLoaded: true } )
         })
-        .then(
-        (result) => {
-                
-                console.log("result:", result)
-
-                if(result) {
-                    try {
-                        let java = JSON.parse(result);
-                        this.setState( { user: java, isLoaded: true } )
-                    } catch(e) {
-                        console.log(e);
-                        this.setState( { isLoaded: true, error: e.name+" "+e.message } )
-                    }
-                }
-        
+        .Fail((status, message)=>{
+            if (status === null) {
+                this.setState( { isLoaded: true, error: message } )
+            } else {
+                const msg = status + ' - ' + message
+                this.setState( { isLoaded: true, error: msg } )
             }
-        )
-        .catch((error) => {
-            console.log("CAUGHT ERROR: ", error)
-            this.setState( { isLoaded: true, error: error.name+" : "+error.message } )
-        });
-
+        })
+        .CallAuth()
 
     }
 
@@ -93,157 +72,85 @@ class UserX extends React.Component {
 
         const error = this.state.error
 
-
         if (error) {
-            return <div>{error}</div>;
+            return <>
+                <Container>
+                    <Row>
+                    <Col></Col><Col><br/><br/>{error}</Col><Col></Col>
+                    </Row>
+                </Container>
+                </>
         } else if (!this.state.isLoaded) {
-            return <div>Loading...</div>;
+            return <>
+                <Container>
+                    <Row>
+                    <Col></Col><Col><br/><br/>Loading...</Col><Col></Col>
+                    </Row>
+                </Container>
+                </>
         } else {
 
-            let user = this.state.user
+            const signedUser = this.context.signedUser
+            const userInURL = this.props.userInURL
+            const isSignedUser = (signedUser === userInURL) ? true : false
 
-            console.log("USER:",user)
+            let term = "you"
+            if (!isSignedUser) term = userInURL
 
             return (
                 <>
                 <Container>
     
-                <br></br>
+                <br/><br/>
     
-                <Row>
-                <Col></Col>
-                <Col>
-    
-                    <Row>
-                    <Col>
-                        {/* <div style={{width: "550px"}}> */}
-                        <div style={{width: "550px"}}>
-                            <h4>User</h4>
-                        </div>
-                    </Col>
-                    </Row>
-    
-    
-                    <br></br>
+                <Row className="justify-content-md-center">
+
+                <Col md={6}>
     
                     <Row>
                     <Col>
-                        <Item item={ user } />
+                        <h4>{this.state.user.name}</h4>
                     </Col>
                     </Row>
-    
-                    <br></br>
+
+                    <br/>
     
                     <Row>
-                    <Col>
-                        <EditUser userName={user.name} onSuccess={this.getUserFromServer} user={this.props.user} />
+                    <Col md={10}>
+                        <UserInfo user={this.state.user} />
                     </Col>
                     </Row>
-    
-                    
-    
-    
+        
+                    <br/>
+
+                    <Row>
+                    <Col>
+                        <Link to={"/offers/?u=" + userInURL}><p>View offers by {term}</p></Link>
+                    </Col>
+                    </Row>
+
+                    <br/>
+
+                    <Row>
+                    <Col md={10}>
+                        <UserStats user={ this.state.user } />
+                    </Col>
+                    </Row>
+
+                    <br/><br/>
+
+                    {!isSignedUser ? null : <UserEdit setUser={this.setUser} user={this.state.user} /> }
+
                 </Col>
-                <Col></Col>
+
                 </Row>
-    
-    
+
             </Container>
 
-            <OffersActive userName={this.props.userName} />
-
             </>
-            );
+            )
         }
 
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Reputation(props) {
-
-    return (
-
-        <div>
-        <h4>Reputation</h4>
-
-        
-        <p>completed/failed trades</p>
-        <p>likes/dislikes from traders</p>
-        <p>delays</p>
-
-        
-
-        </div>
-    );
-}
-
-
-
-function Backup(props) {
-
-    return (
-
-        <div>
-        <h4>Backup</h4>
-
-        <p>total deposit. total insurance. from self. from others.</p>
-        
-        </div>
-    );
-}
-
-
-
-
-
-function Item(props) {
-
-    const item = props.item
-
-    return (
-
-        <Card>
-
-        <ListGroup>
-            <ListItem field={"Name"} value={item.name} variant={"primary"} />
-            <ListItem field={"Email"} value={item.email} />
-            <ListItem field={"Phone"} value={item.phone} variant={"secondary"} />
-        </ListGroup>
-
-        </Card>
-
-    );
-}
-
-
-function ListItem(props) {
-
-    return (
-
-        <ListGroup.Item variant={props.variant}>
-        <Row>
-            <Col>
-                {props.field}
-            </Col>
-            <Col>
-                {props.value}
-            </Col>
-            <Col>
-            
-            </Col>
-        </Row>
-        </ListGroup.Item>
-    );
-}
+UserPage.contextType = MainContext
